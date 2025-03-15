@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Lednička</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .expired { background-color: #ffcccc !important; }
+        .warning { background-color: #ffd8a8 !important; }
+        .form-container { max-width: 800px; margin: 0 auto; }
+    </style>
+</head>
+<body class="container mt-4">
+    <h1 class="mb-4">🥕 Lednička</h1>
+
+    {% if errors %}
+        <div class="alert alert-danger">
+            {% for error in errors %}
+                <p class="mb-0">{{ error }}</p>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <!-- Formulář -->
+    <div class="form-container">
+        <h2 class="mb-3">➕ Přidat/upravit potravinu</h2>
+        <form method="post" enctype="multipart/form-data">
+            <input type="hidden" name="id" value="{{ edit_item['id'] if edit_item else '' }}">
+            
+            <div class="mb-3">
+                <label class="form-label">Název*</label>
+                <input type="text" class="form-control" name="name" 
+                    value="{{ edit_item['name'] if edit_item else '' }}" required>
+            </div>
+
+            <div class="row mb-3">
+                <div class="col">
+                    <label class="form-label">Datum nákupu*</label>
+                    <input type="date" class="form-control" name="purchase_date" 
+                        value="{{ edit_item['purchase_date'] if edit_item else '' }}" required>
+                </div>
+                <div class="col">
+                    <label class="form-label">DMT*</label>
+                    <input type="date" class="form-control" name="min_durability_date" 
+                        value="{{ edit_item['min_durability_date'] if edit_item else '' }}" required>
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <div class="col">
+                    <label class="form-label">DV</label>
+                    <input type="date" class="form-control" name="manufacture_date" 
+                        value="{{ edit_item['manufacture_date'] if edit_item else '' }}">
+                </div>
+                <div class="col">
+                    <label class="form-label">DS</label>
+                    <input type="date" class="form-control" name="consumption_date" 
+                        value="{{ edit_item['consumption_date'] if edit_item else '' }}">
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Foto</label>
+                <input type="file" class="form-control" name="photo">
+                {% if edit_item and edit_item['photo'] %}
+                    <div class="mt-2">
+                        <img src="{{ url_for('uploaded_file', filename=edit_item['photo']) }}" width="50">
+                    </div>
+                {% endif %}
+            </div>
+
+            <button type="submit" class="btn btn-primary">Uložit</button>
+        </form>
+    </div>
+
+    <!-- Tabulka -->
+    <h2 class="mt-5 mb-3">📋 Seznam potravin</h2>
+    <table class="table table-striped">
+        <thead class="table-dark">
+            <tr>
+                <th>Název</th>
+                <th>DV</th>
+                <th>DN</th>
+                <th>DMT</th>
+                <th>DS</th>
+                <th>PS</th>
+                <th>Foto</th>
+                <th>Akce</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+                {% set end_date = datetime.fromisoformat(item['end_date']).date() %}
+                {% set ps_date = datetime.fromisoformat(item['ps']).date() %}
+                <tr class="{% if end_date < now.date() %}expired{% elif ps_date < now.date() %}warning{% endif %}">
+                    <td>{{ item['name'] }}</td>
+                    <td>{{ item['manufacture_date'] or '-' }}</td>
+                    <td>{{ item['purchase_date'] }}</td>
+                    <td>{{ item['min_durability_date'] }}</td>
+                    <td>{{ item['consumption_date'] or '-' }}</td>
+                    <td>{{ item['ps'] }}</td>
+                    <td>
+                        {% if item['photo'] %}
+                            <img src="{{ url_for('uploaded_file', filename=item['photo']) }}" width="50">
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{{ url_for('index', edit=item['id']) }}" class="btn btn-sm btn-primary">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <a href="{{ url_for('index', delete=1, id=item['id']) }}" 
+                           class="btn btn-sm btn-danger" 
+                           onclick="return confirm('Opravdu smazat?')">
+                            <i class="fas fa-trash"></i>
+                        </a>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>
